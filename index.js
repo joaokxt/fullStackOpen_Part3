@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 const express = require('express') 
 const app = express()
 
@@ -14,7 +16,9 @@ morgan.token('content', function(req, res) {
 
 app.use(morgan(':method :url :status: :res[content-length] - :response-time ms :content'))
 
+const Person = require('./models/person')
 
+/*
 let persons = [
     { 
       "id": 1,
@@ -33,24 +37,22 @@ let persons = [
     },
     { 
       "id": 4,
-      "name": "Mary Poppendieck", 
+      "name": "Mary Poppendiek", 
       "number": "39-23-6423122"
     }
 ]
+*/
 
 app.get('/api/persons', (request, response) => {
-    response.json(persons)
+    Person.find({}).then(persons => {
+        response.json(persons)
+    })
 })
 
 app.get('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id)
-    const person = persons.find(p => p.id === id)
-
-    if(!person){
-        response.status(404).end()
-    } else {
+    Person.findById(request.params.id).then(person => {
         response.json(person)
-    }  
+    })
 })
 
 app.post('/api/persons', (request, response) => {
@@ -67,20 +69,20 @@ app.post('/api/persons', (request, response) => {
         })
     }
 
-    const repeated = persons.find(p => p.name === body.name)
+    const repeated = Person.find({ name: body.name })
     if(repeated){
         return response.status(400).json({
             error: "name attribute must be unique"
         })
     }
 
-    newPerson = {
-        id: Math.floor(Math.random() * 1001),
-        name: body.name || "John Doe",
+    const newPerson = Person({
+        name: body.name,
         number: body.number
-    }
-    persons = persons.concat(newPerson)
-    response.json(newPerson)
+    })
+    newPerson.save().then(savedPerson => {
+        response.json(savedPerson)
+    })
 })
 
 app.delete('/api/persons/:id', (request, response) => {
@@ -91,7 +93,7 @@ app.delete('/api/persons/:id', (request, response) => {
 })
 
 app.get('/info', (request, response) => {
-    const info = `<p>Phonebook has info for ${persons.length} people</p>`
+    const info = `<p>Phonebook has info for ${Person.count()} people</p>`
     const date = `<p> ${new Date()} </p>`
     response.send(info + date)
 })
