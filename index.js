@@ -93,9 +93,12 @@ app.delete('/api/persons/:id', (request, response) => {
 })
 
 app.get('/info', (request, response) => {
-    const info = `<p>Phonebook has info for ${Person.count()} people</p>`
-    const date = `<p> ${new Date()} </p>`
-    response.send(info + date)
+    Person.countDocuments({})
+        .then(count => {
+            const info = `<p>Phonebook has info for ${count} people</p>`
+            const date = `<p> ${new Date()} </p>`
+            response.send(info + date)
+        })
 })
 
 const unknownEndpoint = (request, response) => {
